@@ -8,11 +8,13 @@ FROM centos:centos8 as base
 ARG USERNAME
 ARG USERID
 ARG USERGID
+ARG SNPTEST_DIR
 
 # Put the user name and ID into the ENV, so the runtime inherits them
 ENV USERNAME=${USERNAME:-nouser} \
 	USERID=${USERID:-65533} \
-	USERGID=${USERGID:-nogroup}
+	USERGID=${USERGID:-nogroup} \
+	SNPTEST_DIR=${SNPTEST_DIR}
 
 # match the building user. This will allow output only where the building
 # user has write permissions
@@ -23,8 +25,7 @@ RUN yum -y update && yum -y upgrade && \
 	yum -y install epel-release && yum repolist && \
 	yum -y install gnuplot htslib wget zlib
 
-# This creates the actual container we will run
-FROM base AS release
+WORKDIR /runtime
 
 ARG SNPTEST="snptest_v2.5.6"
 ARG SNPTEST_ARCH="x86_64_dynamic"
@@ -37,9 +38,7 @@ RUN wget http://www.well.ox.ac.uk/~gav/resources/$SNPTEST_TAR && \
 	ln -s /opt/${SNPTEST_DIST}.${SNPTEST_BUILD}-${SNPTEST_ARCH}/${SNPTEST} \
 		/usr/local/bin/snptest && snptest -help
 
-WORKDIR /runtime
 RUN chown -R $USERNAME:$USERGID /runtime
-
 USER $USERNAME
 
-CMD ["snptest"]
+ENTRYPOINT [ "snptest" ]
