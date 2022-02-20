@@ -1,44 +1,43 @@
-# This is a typical three-stage docker build.
+FROM ubuntu:22.04 as base
 
-FROM centos:centos8 as base
-
-# user data provided by the host system via the make file
-# without these, the container will fail-safe and be unable to write output
-# to any bind-mounted data volumes
-ARG USERNAME
-ARG USERID
-ARG USERGID
+# group data provided by the host system via the make file
+# without the group, the container will fail-safe and be unable to write output
+ARG GROUP
 ARG SNPTEST_DIR
 
 # Put the user name and ID into the ENV, so the runtime inherits them
-ENV USERNAME=${USERNAME:-nouser} \
-	USERID=${USERID:-65533} \
-	USERGID=${USERGID:-nogroup} \
-	SNPTEST_DIR=${SNPTEST_DIR}
-
-# match the building user. This will allow output only where the building
-# user has write permissions
-RUN useradd -m -u $USERID -g $USERGID $USERNAME
+ENV GROUP=${GROUP:-nogroup} \
+    SNPTEST_DIR=${SNPTEST_DIR}
 
 # Install OS updates, security fixes and utils, generic app dependencies
-RUN yum -y update && yum -y upgrade && \
-	yum -y install epel-release && yum repolist && \
-	yum -y install gnuplot htslib wget zlib
+# htslib is libhts3 in Ubuntu see https://github.com/samtools/htslib/
+RUN apt -y update -qq && apt -y upgrade && \
+	DEBIAN_FRONTEND=noninteractive apt -y install \
+		ca-certificates \
+		dirmngr \
+		ghostscript gnuplot \
+		less libfile-pushd-perl libhts3 \
+		software-properties-common \
+		strace wget xz-utils zlib1g
+
+# This creates the actual container we will run
+FROM base AS release
+
+# these args may need to be abstracted for a more generic deployment
 
 WORKDIR /runtime
 
+ARG SNPTEST_URL="www.well.ox.ac.uk/~gav/resources/"
 ARG SNPTEST="snptest_v2.5.6"
 ARG SNPTEST_ARCH="x86_64_dynamic"
 ARG SNPTEST_BUILD="2003"
 ARG SNPTEST_DIST=${SNPTEST}_CentOS_Linux7.8
 ARG SNPTEST_TAR=${SNPTEST_DIST}-${SNPTEST_ARCH}.tgz
-RUN wget http://www.well.ox.ac.uk/~gav/resources/$SNPTEST_TAR && \
-	tar xvf $SNPTEST_TAR -C /opt/ && rm $SNPTEST_TAR && \
-	chown -R root:users /opt/${SNPTEST_DIST}* && \
-	ln -s /opt/${SNPTEST_DIST}.${SNPTEST_BUILD}-${SNPTEST_ARCH}/${SNPTEST} \
-		/usr/local/bin/snptest && snptest -help
+RUN wget https://${SNPTEST_URL}/$SNPTEST_TAR && mkdir -p ${SNPTEST_DIR} && \
+	tar xvf $SNPTEST_TAR --strip-components=1 -C ${SNPTEST_DIR} && \
+	rm $SNPTEST_TAR && chown -R root:${GROUP} ${SNPTEST_DIR} && \
+	ln -s ${SNPTEST_DIR}/${SNPTEST} /usr/local/bin/snptest
 
-RUN chown -R $USERNAME:$USERGID /runtime
-USER $USERNAME
+RUN chgrp -R $GROUP /runtime
 
 ENTRYPOINT [ "snptest" ]

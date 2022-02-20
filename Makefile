@@ -1,34 +1,32 @@
-ORG_NAME ?= um
+ORG_NAME := um
 PROJECT_NAME ?= docker-snptest
 
 USER ?= `whoami`
-USERID ?= `id -u`
-USERGID ?= users
+GID ?= users
 
 IMAGE_REPOSITORY :=
 IMAGE := $(USER)/$(ORG_NAME)/$(PROJECT_NAME):latest
 
 # Use this for debugging builds. Turn off for a more slick build log
 DOCKER_BUILD_ARGS := --progress=plain
+
 SNPTEST_DIR := /opt/snptest
 
 .PHONY: all build clean test tests
 
 all: docker test
 
-tests: test
-
 test: docker
-	@docker run -t $(IMAGE) -help > /dev/null
+	@docker run -t $(IMAGE) snptest -help > /dev/null
+
+tests: test
 
 clean:
 	@docker rmi $(IMAGE)
 
 docker:
 	@docker build -t $(IMAGE) \
-		--build-arg USERNAME=$(USER) \
-		--build-arg USERID=$(USERID) \
-		--build-arg USERGID=$(USERGID) \
+		--build-arg GROUP=$(GID) \
 		--build-arg SNPTEST_DIR="$(SNPTEST_DIR)" \
 		$(DOCKER_BUILD_ARGS) \
 	  .
