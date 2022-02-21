@@ -1,8 +1,6 @@
 ORG_NAME ?= um
 PROJECT_NAME ?= docker-snptest
 
-GID ?= users
-
 IMAGE_REPOSITORY :=
 IMAGE := $(ORG_NAME)/$(PROJECT_NAME):latest
 
@@ -24,7 +22,6 @@ clean:
 
 docker:
 	@docker build -t $(IMAGE) \
-		--build-arg GROUP=$(GID) \
 		--build-arg SNPTEST_DIR="$(SNPTEST_DIR)" \
 		$(DOCKER_BUILD_ARGS) \
 	  .
