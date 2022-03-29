@@ -1,5 +1,5 @@
 ORG_NAME := hihg-um
-PROJECT_NAME ?= docker-snptest
+PROJECT_NAME ?= snptest
 
 IMAGE_REPOSITORY :=
 IMAGE := $(ORG_NAME)/$(PROJECT_NAME):latest
