@@ -5,7 +5,7 @@ OS_BASE ?= ubuntu
 OS_VER ?= 22.04
 
 IMAGE_REPOSITORY :=
-IMAGE := $(ORG_NAME)/$(PROJECT_NAME)-$(SNPTEST_VER):latest
+IMAGE := $(ORG_NAME)/$(PROJECT_NAME):latest
 
 # Use this for debugging builds. Turn off for a more slick build log
 DOCKER_BUILD_ARGS := --progress=plain
