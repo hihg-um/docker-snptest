@@ -4,8 +4,12 @@ SNPTEST_VER ?= 2.5.6
 OS_BASE ?= ubuntu
 OS_VER ?= 22.04
 
+USER ?= `whoami`
+USERID := `id -u`
+USERGID := `id -g`
+
 IMAGE_REPOSITORY :=
-IMAGE := $(ORG_NAME)/$(PROJECT_NAME):latest
+IMAGE := $(ORG_NAME)/$(USER)/$(PROJECT_NAME):latest
 
 # Use this for debugging builds. Turn off for a more slick build log
 DOCKER_BUILD_ARGS := --progress=plain
@@ -29,6 +33,9 @@ docker:
 		--build-arg BASE_IMAGE=$(OS_BASE):$(OS_VER) \
 		--build-arg SNPTEST_VER=$(SNPTEST_VER) \
 		--build-arg SNPTEST_DIR="$(SNPTEST_DIR)" \
+		--build-arg USERNAME=$(USER) \
+		--build-arg USERID=$(USERID) \
+		--build-arg USERGID=$(USERGID) \
 		$(DOCKER_BUILD_ARGS) \
 	  .
 
