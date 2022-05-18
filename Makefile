@@ -1,5 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0
+
 ORG_NAME ?= hihg-um
 PROJECT_NAME ?= docker-snptest
+SNPTEST_VER ?= 2.5.6
+OS_BASE ?= centos
+OS_VER ?= centos8
+
+USER ?= `whoami`
+USERID := `id -u`
+USERGID := `id -g`
 
 IMAGE_REPOSITORY :=
 IMAGE := $(ORG_NAME)/$(PROJECT_NAME):latest
@@ -22,6 +31,7 @@ clean:
 
 docker:
 	@docker build -t $(IMAGE) \
+		--build-arg BASE_IMAGE=$(OS_BASE):$(OS_VER) \
 		--build-arg SNPTEST_DIR="$(SNPTEST_DIR)" \
 		$(DOCKER_BUILD_ARGS) \
 	  .

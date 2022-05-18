@@ -1,6 +1,7 @@
-# This is a typical three-stage docker build.
+# SPDX-License-Identifier: GPL-2.0
 
-FROM centos:centos8 as base
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} as base
 
 # user data provided by the host system via the make file
 # without these, the container will fail-safe and be unable to write output
