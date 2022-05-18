@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0
+
 ORG_NAME := hihg-um
 PROJECT_NAME ?= snptest
 SNPTEST_VER ?= 2.5.4-beta3
