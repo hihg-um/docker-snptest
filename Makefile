@@ -8,7 +8,8 @@ OS_VER ?= 22.04
 
 USER ?= `whoami`
 USERID := `id -u`
-USERGID := `id -g`
+USERGNAME ?= "adgc"
+USERGID ?= 5000
 
 IMAGE_REPOSITORY :=
 IMAGE := $(ORG_NAME)/$(USER)/$(PROJECT_NAME):latest
@@ -37,6 +38,7 @@ docker:
 		--build-arg SNPTEST_DIR="$(SNPTEST_DIR)" \
 		--build-arg USERNAME=$(USER) \
 		--build-arg USERID=$(USERID) \
+		--build-arg USERGNAME=$(USERGNAME) \
 		--build-arg USERGID=$(USERGID) \
 		$(DOCKER_BUILD_ARGS) \
 	  .
