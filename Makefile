@@ -1,47 +1,70 @@
 # SPDX-License-Identifier: GPL-2.0
 
 ORG_NAME := hihg-um
-PROJECT_NAME ?= snptest
-SNPTEST_VER ?= 2.5.6
 OS_BASE ?= ubuntu
 OS_VER ?= 22.04
 
-USER ?= `whoami`
-USERID := `id -u`
-USERGNAME ?= "adgc"
-USERGID ?= 5000
-
 IMAGE_REPOSITORY :=
-IMAGE := $(ORG_NAME)/$(USER)/$(PROJECT_NAME):latest
+GIT_TAG := $(shell git tag)
+GIT_REV := $(shell git describe --always --dirty)
+DOCKER_TAG ?= $(GIT_TAG)-$(GIT_REV)
 
 # Use this for debugging builds. Turn off for a more slick build log
 DOCKER_BUILD_ARGS := --progress=plain
 
-SNPTEST_DIR := /opt/$(PROJECT_NAME)
+TOOLS := snptest
+DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
+SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
 
-.PHONY: all build clean test tests
+# SNPTEST-specific
+SNPTEST_VER := 2.5.6
 
-all: docker test
+.PHONY: clean docker test test_apptainer test_docker $(DOCKER_IMAGES)
 
-test: docker
-	@docker run -t $(IMAGE) snptest -help > /dev/null
+help:
+	@echo "Targets are docker test_docker release_docker apptainer test_apptainer"
+	@echo "Docker: $(DOCKER_IMAGES) Apptainer: $(SVF_IMAGES)"
 
-tests: test
+all: docker test_docker apptainer test_apptainer
 
 clean:
-	@docker rmi $(IMAGE)
+	rm -f $(SVF_IMAGES)
+	for f in $(TOOLS); do \
+		docker rmi -f $(ORG_NAME)/$$f 2>/dev/null; \
+	done
 
-docker:
-	@docker build -t $(IMAGE) \
+test: test_docker test_apptainer
+
+$(TOOLS):
+	@echo "Building Docker container $@"
+	docker build -t $(ORG_NAME)/$@:$(DOCKER_TAG) \
+		$(DOCKER_BUILD_ARGS) \
+		--build-arg RUN_CMD=$@ \
 		--build-arg BASE_IMAGE=$(OS_BASE):$(OS_VER) \
 		--build-arg SNPTEST_VER=$(SNPTEST_VER) \
-		--build-arg SNPTEST_DIR="$(SNPTEST_DIR)" \
-		--build-arg USERNAME=$(USER) \
-		--build-arg USERID=$(USERID) \
-		--build-arg USERGNAME=$(USERGNAME) \
-		--build-arg USERGID=$(USERGID) \
-		$(DOCKER_BUILD_ARGS) \
-	  .
+		--build-arg SNPTEST_DIR="/opt/$($@)" \
+		.
 
-release:
-	docker push $(IMAGE_REPOSITORY)/$(IMAGE)
+docker: $(TOOLS)
+
+test_docker: $(DOCKER_IMAGES)
+	for f in $^; do \
+		echo "Testing docker image: $(ORG_NAME)/$$f"; \
+		docker run -t --user $(id -u):$(id -g) -v /mnt:/mnt \
+			$(ORG_NAME)/$$f --help; \
+	done
+
+release_docker: $(DOCKER_IMAGES)
+	@docker push $(IMAGE_REPOSITORY)/$(ORG_NAME)/$@
+
+$(SVF_IMAGES):
+	@echo "Building $@"
+	apptainer build $@ docker-daemon:$(ORG_NAME)/$(patsubst %.svf,%,$@)
+
+apptainer: $(SVF_IMAGES)
+
+test_apptainer: $(SVF_IMAGES)
+	for f in $^; do \
+		echo "Testing apptainer image: $$f"; \
+		apptainer run $$f --help; \
+	done
