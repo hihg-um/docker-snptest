@@ -14,7 +14,7 @@ IMAGE_REPOSITORY :=
 IMAGE := $(ORG_NAME)/$(PROJECT_NAME):latest
 
 # Use this for debugging builds. Turn off for a more slick build log
-DOCKER_BUILD_ARGS := --progress=plain
+DOCKER_BUILD_ARGS :=
 SNPTEST_DIR := /opt/snptest
 
 .PHONY: all build clean test tests
