@@ -7,9 +7,7 @@ OS_VER ?= centos7
 
 IMAGE_REPOSITORY ?=
 
-GIT_TAG := $(shell git tag)
-GIT_REV := $(shell git describe --always --dirty)
-DOCKER_TAG ?= $(GIT_TAG)-$(GIT_REV)
+DOCKER_TAG := $(shell git describe --tags --abbrev=0 --dirty)
 
 TOOLS := snptest
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
@@ -19,17 +17,17 @@ SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
 SNPTEST_VER ?= snptest_v2.5.6
 SNPTEST_ARCH ?= CentOS_Linux7.9.2009-x86_64_static
 
-.PHONY: clean docker test test_apptainer test_docker $(DOCKER_IMAGES)
+.PHONY: clean docker test apptainer_test docker_test docker_release $(DOCKER_IMAGES)
 
 help:
 	@echo "Targets: all clean test"
-	@echo "         docker test_docker release_docker"
-	@echo "         apptainer test_apptainer"
+	@echo "         docker docker_test docker_release"
+	@echo "         apptainer apptainer_test"
 	@echo "Docker containers:\n$(DOCKER_IMAGES)"
 	@echo
 	@echo "Apptainer images:\n$(SVF_IMAGES)"
 
-all: clean docker test_docker apptainer test_apptainer
+all: clean docker docker_test apptainer apptainer_test
 
 clean:
 	rm -f $(SVF_IMAGES)
@@ -37,7 +35,7 @@ clean:
 		docker rmi -f $(ORG_NAME)/$$f 2>/dev/null; \
 	done
 
-test: test_docker test_apptainer
+test: docker_test apptainer_test
 
 $(TOOLS):
 	@echo "Building Docker container $@"
@@ -51,7 +49,7 @@ $(TOOLS):
 
 docker: $(TOOLS)
 
-test_docker: $(DOCKER_IMAGES)
+docker_test: $(DOCKER_IMAGES)
 	for f in $^; do \
 		echo "Testing Docker container: $(ORG_NAME)/$$f"; \
 		docker run -t \
@@ -61,7 +59,7 @@ test_docker: $(DOCKER_IMAGES)
 			$(ORG_NAME)/$$f -help; \
 	done
 
-release_docker: $(DOCKER_IMAGES)
+docker_release: $(DOCKER_IMAGES)
 	docker push $(IMAGE_REPOSITORY)/$(ORG_NAME)/$@
 
 $(SVF_IMAGES):
@@ -70,7 +68,7 @@ $(SVF_IMAGES):
 
 apptainer: $(SVF_IMAGES)
 
-test_apptainer: $(SVF_IMAGES)
+apptainer_test: $(SVF_IMAGES)
 	for f in $^; do \
 		echo "Testing Apptainer image: $$f"; \
 		apptainer run $$f -help; \
