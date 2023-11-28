@@ -5,8 +5,7 @@ PROJECT_NAME ?= snptest
 OS_BASE ?= centos
 OS_VER ?= centos7
 
-DOCKER_BUILD_ARGS :=
-SNPTEST_DIR := /opt/snptest
+IMAGE_REPOSITORY ?=
 
 GIT_TAG := $(shell git tag)
 GIT_REV := $(shell git describe --always --dirty)
@@ -32,9 +31,6 @@ help:
 
 all: clean docker test_docker apptainer test_apptainer
 
-test: docker
-	@docker run -t $(IMAGE) -help > /dev/null
-
 clean:
 	rm -f $(SVF_IMAGES)
 	for f in $(TOOLS); do \
@@ -58,7 +54,10 @@ docker: $(TOOLS)
 test_docker: $(DOCKER_IMAGES)
 	for f in $^; do \
 		echo "Testing Docker container: $(ORG_NAME)/$$f"; \
-		docker run -t --user $(id -u):$(id -g) -v /mnt:/mnt \
+		docker run -t \
+			-v /etc/passwd:/etc/passwd:ro \
+			-v /etc/group:/etc/group:ro \
+			--user=$(shell echo `id -u`):$(shell echo `id -g`) \
 			$(ORG_NAME)/$$f -help; \
 	done
 
