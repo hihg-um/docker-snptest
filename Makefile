@@ -10,7 +10,8 @@ IMAGE_REPOSITORY ?=
 TOOLS := snptest
 
 DOCKER_BUILD_ARGS ?=
-DOCKER_TAG := $(shell git describe --tags --abbrev=0 --dirty)
+DOCKER_TAG := $(shell git describe --tags --broken --dirty --all --long | \
+	      		sed "s,heads/,,")
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
 
 SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
