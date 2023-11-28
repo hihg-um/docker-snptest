@@ -2,8 +2,9 @@
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
-ARG RUN_CMD
 ARG SNPTEST_VER
+ARG SNPTEST_ARCH
+ARG RUN_CMD
 
 # Install OS updates, security fixes and utils, generic app dependencies
 RUN apt -y update -qq && apt -y upgrade && \
@@ -12,24 +13,17 @@ RUN apt -y update -qq && apt -y upgrade && \
 		less libfile-pushd-perl libhts3 \
 		strace wget xz-utils zlib1g
 
-# analytics package target - we want a new layer here, since different
-# dependencies will have to be installed, sharing the common base above
+WORKDIR /runtime
 
-ARG SNPTEST_URL="www.well.ox.ac.uk/~gav/resources/"
-ARG SNPTEST="snptest_v${SNPTEST_VER}"
-ARG SNPTEST_ARCH="x86_64_dynamic"
-ARG SNPTEST_BUILD="2003"
-ARG SNPTEST_DIST=${SNPTEST}_CentOS_Linux7.8
-ARG SNPTEST_TAR=${SNPTEST_DIST}-${SNPTEST_ARCH}.tgz
-ARG SNPTEST_DIR="/usr/local/bin"
+ARG SNPTEST_URL="https://www.well.ox.ac.uk/~gav/resources/"
+ARG SNPTEST_TAR=${SNPTEST_VER}_${SNPTEST_ARCH}.tgz
+ARG SNPTEST_DIR="/opt/bin"
 
-RUN wget https://${SNPTEST_URL}/$SNPTEST_TAR && \
-	tar xvf $SNPTEST_TAR --strip-components=1 -C ${SNPTEST_DIR} && \
-	ln -s ${SNPTEST_DIR}/${SNPTEST} "${SNPTEST_DIR}/${RUN_CMD}" && \
-	rm $SNPTEST_TAR
+RUN wget ${SNPTEST_URL}/${SNPTEST_TAR} && mkdir -p ${SNPTEST_DIR} && \
+        tar xvf $SNPTEST_TAR --strip-components=1 -C ${SNPTEST_DIR} && \
+        ln -s "${SNPTEST_DIR}/${SNPTEST_VER}" "${SNPTEST_DIR}/${RUN_CMD}" && \
+        rm $SNPTEST_TAR
+ENV PATH=${SNPTEST_DIR}:${PATH}
 
-ENV PATH=${PATH}:${SNPTEST_DIR}
-# Create an entrypoint for the binary
-RUN echo "#!/bin/bash\n$RUN_CMD \$@" > /entrypoint.sh && \
-	chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+COPY src/${RUN_CMD}.sh /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]

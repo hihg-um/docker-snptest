@@ -1,23 +1,23 @@
 # SPDX-License-Identifier: GPL-2.0
 
-ORG_NAME := hihg-um
+ORG_NAME ?= hihg-um
+PROJECT_NAME ?= snptest
 OS_BASE ?= ubuntu
 OS_VER ?= 22.04
 
-IMAGE_REPOSITORY :=
+IMAGE_REPOSITORY ?=
+
 GIT_TAG := $(shell git tag)
 GIT_REV := $(shell git describe --always --dirty)
 DOCKER_TAG ?= $(GIT_TAG)-$(GIT_REV)
-
-# Use this for debugging builds. Turn off for a more slick build log
-DOCKER_BUILD_ARGS := --progress=plain
 
 TOOLS := snptest
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
 SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
 
 # SNPTEST-specific
-SNPTEST_VER := 2.5.6
+SNPTEST_VER ?= snptest_v2.5.6
+SNPTEST_ARCH ?= CentOS_Linux7.9.2009-x86_64_static
 
 .PHONY: clean docker test test_apptainer test_docker $(DOCKER_IMAGES)
 
@@ -44,8 +44,9 @@ $(TOOLS):
 	docker build -t $(ORG_NAME)/$@:$(DOCKER_TAG) \
 		$(DOCKER_BUILD_ARGS) \
 		--build-arg BASE_IMAGE=$(OS_BASE):$(OS_VER) \
-		--build-arg RUN_CMD=$@ \
 		--build-arg SNPTEST_VER=$(SNPTEST_VER) \
+		--build-arg SNPTEST_ARCH=$(SNPTEST_ARCH) \
+		--build-arg RUN_CMD=$@ \
 		.
 
 docker: $(TOOLS)
@@ -53,7 +54,10 @@ docker: $(TOOLS)
 test_docker: $(DOCKER_IMAGES)
 	for f in $^; do \
 		echo "Testing Docker container: $(ORG_NAME)/$$f"; \
-		docker run -t --user $(id -u):$(id -g) -v /mnt:/mnt \
+		docker run -t \
+			-v /etc/passwd:/etc/passwd:ro \
+			-v /etc/group:/etc/group:ro \
+			--user=$(shell echo `id -u`):$(shell echo `id -g`) \
 			$(ORG_NAME)/$$f -help; \
 	done
 
