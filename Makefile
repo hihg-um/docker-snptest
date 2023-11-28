@@ -11,7 +11,7 @@ TOOLS := snptest
 
 DOCKER_BUILD_ARGS ?=
 DOCKER_TAG := $(shell git describe --tags --broken --dirty --all --long | \
-	      		sed "s,heads/,,")
+	      		sed "s,heads/,," | sed "s,tags/,,")
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
 
 SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
