@@ -7,10 +7,12 @@ OS_VER ?= centos7
 
 IMAGE_REPOSITORY ?=
 
-DOCKER_TAG := $(shell git describe --tags --abbrev=0 --dirty)
-
 TOOLS := snptest
+
+DOCKER_BUILD_ARGS ?=
+DOCKER_TAG := $(shell git describe --tags --abbrev=0 --dirty)
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
+
 SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
 
 # SNPTEST-specific
@@ -46,6 +48,7 @@ $(TOOLS):
 		--build-arg SNPTEST_ARCH=$(SNPTEST_ARCH) \
 		--build-arg RUN_CMD=$@ \
 		.
+	$(if $(shell git fetch; git diff @{upstream}),,docker tag $(ORG_NAME)/$@:$(DOCKER_TAG) $(ORG_NAME)/$@:latest)
 
 docker: $(TOOLS)
 
