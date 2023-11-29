@@ -12,7 +12,7 @@ DOCKER_BUILD_ARGS ?=
 DOCKER_TAG ?= $(shell git describe --tags --broken --dirty --all --long \
 			| sed "s,heads/,," | sed "s,tags/,,")
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
-SVF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).svf)
+SIF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).sif)
 
 # SNPTEST-specific
 SNPTEST_VER ?= snptest_v2.5.6
@@ -32,7 +32,7 @@ help:
 	done
 	@echo
 	@echo "Apptainer(s):"
-	@for f in $(SVF_IMAGES); do \
+	@for f in $(SIF_IMAGES); do \
 		printf "\t$$f\n"; \
 	done
 	@echo
@@ -87,19 +87,19 @@ docker_release: $(DOCKER_IMAGES)
 	done
 
 # Apptainer
-apptainer: $(SVF_IMAGES)
+apptainer: $(SIF_IMAGES)
 
-$(SVF_IMAGES):
+$(SIF_IMAGES):
 	@echo "Building Apptainer: $@"
-	@apptainer build $@ docker-daemon:$(ORG_NAME)/$(patsubst %.svf,%,$@)
+	@apptainer build $@ docker-daemon:$(ORG_NAME)/$(patsubst %.sif,%,$@)
 
 apptainer_clean:
-	@for f in $(SVF_IMAGES); do \
+	@for f in $(SIF_IMAGES); do \
 		printf "Cleaning up Apptainer: $$f\n"; \
 		rm -f $$f; \
 	done
 
-apptainer_test: $(SVF_IMAGES)
+apptainer_test: $(SIF_IMAGES)
 	@for f in $^; do \
 		echo "Testing Apptainer: $$f"; \
 		apptainer run $$f -help; \
