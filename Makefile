@@ -9,21 +9,22 @@ IMAGE_REPOSITORY ?=
 TOOLS := snptest
 
 DOCKER_BUILD_ARGS ?=
-DOCKER_TAG ?= $(shell git describe --tags --broken --dirty --all --long \
-			| sed "s,heads/,," | sed "s,tags/,,")
+DOCKER_TAG ?= $(shell git describe --tags --broken --dirty --all --long | \
+			sed "s,heads/,," | sed "s,tags/,,")
+DOCKER_BASE ?= $(patsubst docker-%,%,$(shell basename \
+		`git remote --verbose | grep origin | grep fetch | \
+		cut -f2 | cut -d ' ' -f1` | sed 's/.git//'))
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
 SIF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).sif)
 
-# SNPTEST-specific
-SNPTEST_VER ?= snptest_v2.5.6
-SNPTEST_ARCH ?= CentOS_Linux7.9.2009-x86_64_static
+IMAGE_TEST_ARGS ?= "-help"
 
 .PHONY: apptainer_clean apptainer_test \
-	docker_clean docker_test docker_release $(TOOLS)
+	docker_base docker_clean docker_test docker_release $(TOOLS)
 
 help:
 	@echo "Targets: all build clean test release"
-	@echo "         docker docker_clean docker_test docker_release"
+	@echo "         docker docker_base docker_clean docker_test docker_release"
 	@echo "         apptainer apptainer_clean apptainer_test"
 	@echo
 	@echo "Docker container(s):"
@@ -48,28 +49,37 @@ release: docker_release
 test: docker_test apptainer_test
 
 # Docker
-docker: $(TOOLS)
+docker: docker_base $(TOOLS)
 
 $(TOOLS):
 	@echo "Building Docker container: $@"
-	@docker build -t $(ORG_NAME)/$@:$(DOCKER_TAG) \
+	@docker build \
+		-f Dockerfile.$@ \
+		-t $(ORG_NAME)/$@:$(DOCKER_TAG) \
 		$(DOCKER_BUILD_ARGS) \
-		--build-arg BASE_IMAGE=$(OS_BASE):$(OS_VER) \
-		--build-arg SNPTEST_VER=$(SNPTEST_VER) \
-		--build-arg SNPTEST_ARCH=$(SNPTEST_ARCH) \
+		--build-arg BASE_IMAGE=$(ORG_NAME)/$(DOCKER_BASE):$(DOCKER_TAG) \
 		--build-arg RUN_CMD=$@ \
 		.
+
 	$(if $(shell git fetch; git diff @{upstream}),,docker tag \
 		$(ORG_NAME)/$@:$(DOCKER_TAG) $(ORG_NAME)/$@:latest)
 
+docker_base:
+	@echo "Building Docker base: $(DOCKER_BASE):$(DOCKER_TAG)"
+	@docker build -t $(ORG_NAME)/$(DOCKER_BASE):$(DOCKER_TAG) \
+		$(DOCKER_BUILD_ARGS) \
+		--build-arg BASE_IMAGE=$(OS_BASE):$(OS_VER) \
+		.
+
 docker_clean:
 	@for f in $(TOOLS); do \
-		echo "Cleaning up Docker container: $$f:$(DOCKER_TAG)"; \
 		docker rmi -f $(ORG_NAME)/$$f:$(DOCKER_TAG) 2>/dev/null; \
 		if [ -z "`git fetch; git diff @{upstream}`" ]; then \
 			docker rmi -f $(ORG_NAME)/$$f:latest; \
 		fi \
 	done
+	@docker rmi -f $(ORG_NAME)/$(DOCKER_BASE):$(DOCKER_TAG)
+	@docker builder prune -f 2>/dev/null;
 
 docker_test: 
 	@for f in $(DOCKER_IMAGES); do \
@@ -78,7 +88,7 @@ docker_test:
 			-v /etc/passwd:/etc/passwd:ro \
 			-v /etc/group:/etc/group:ro \
 			--user=$(shell echo `id -u`):$(shell echo `id -g`) \
-			$(ORG_NAME)/$$f -help; \
+			$(ORG_NAME)/$$f $(IMAGE_TEST_ARGS); \
 	done
 
 docker_release: $(DOCKER_IMAGES)
@@ -95,12 +105,14 @@ $(SIF_IMAGES):
 
 apptainer_clean:
 	@for f in $(SIF_IMAGES); do \
-		printf "Cleaning up Apptainer: $$f\n"; \
-		rm -f $$f; \
+		if [ -f "$$f" ]; then \
+			printf "Cleaning up Apptainer: $$f\n"; \
+			rm -f $$f; \
+		fi \
 	done
 
 apptainer_test: $(SIF_IMAGES)
 	@for f in $^; do \
 		echo "Testing Apptainer: $$f"; \
-		apptainer run $$f -help; \
+		apptainer run $$f $(IMAGE_TEST_ARGS); \
 	done
