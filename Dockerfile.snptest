@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-2.0
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
+
+ARG RUN_CMD
+
+WORKDIR /runtime
+
+ARG SNPTEST_URL="https://www.well.ox.ac.uk/~gav/resources/"
+ARG SNPTEST_VER="snptest_v2.5.6"
+ARG SNPTEST_ARCH="CentOS_Linux7.9.2009-x86_64_static"
+ARG SNPTEST_TAR=${SNPTEST_VER}_${SNPTEST_ARCH}.tgz
+ARG SNPTEST_DIR="/opt/bin"
+
+RUN wget ${SNPTEST_URL}/${SNPTEST_TAR} && mkdir -p ${SNPTEST_DIR} && \
+        tar xvf $SNPTEST_TAR --strip-components=1 -C ${SNPTEST_DIR} && \
+        ln -s "${SNPTEST_DIR}/${SNPTEST_VER}" \
+		"${SNPTEST_DIR}/${RUN_CMD}" && rm $SNPTEST_TAR
+ENV PATH=${SNPTEST_DIR}:${PATH}
+
+# Create an entrypoint for the binary
+RUN echo "#!/bin/bash" > /entrypoint.sh && \
+	echo "$RUN_CMD \$@" >> /entrypoint.sh && \
+	chmod +x /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]
