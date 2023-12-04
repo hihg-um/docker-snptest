@@ -61,8 +61,8 @@ $(TOOLS):
 		--build-arg RUN_CMD=$@ \
 		.
 
-	$(if $(shell git fetch; git diff @{upstream}),,docker tag \
-		$(ORG_NAME)/$@:$(DOCKER_TAG) $(ORG_NAME)/$@:latest)
+	$(if $(shell git fetch 2>&1; git diff @{upstream} 2>&1),,docker \
+	       tag $(ORG_NAME)/$@:$(DOCKER_TAG) $(ORG_NAME)/$@:latest)
 
 docker_base:
 	@echo "Building Docker base: $(DOCKER_BASE):$(DOCKER_TAG)"
@@ -74,8 +74,9 @@ docker_base:
 docker_clean:
 	@for f in $(TOOLS); do \
 		docker rmi -f $(ORG_NAME)/$$f:$(DOCKER_TAG) 2>/dev/null; \
-		if [ -z "`git fetch; git diff @{upstream}`" ]; then \
-			docker rmi -f $(ORG_NAME)/$$f:latest; \
+		if [ -z "`git fetch 2>&1; \
+			git diff @{upstream} 2>&1`" ]; then \
+				docker rmi -f $(ORG_NAME)/$$f:latest; \
 		fi \
 	done
 	@docker rmi -f $(ORG_NAME)/$(DOCKER_BASE):$(DOCKER_TAG)
