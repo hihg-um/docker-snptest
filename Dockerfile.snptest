@@ -18,8 +18,7 @@ RUN wget ${SNPTEST_URL}/${SNPTEST_TAR} && mkdir -p ${SNPTEST_DIR} && \
 		"${SNPTEST_DIR}/${RUN_CMD}" && rm $SNPTEST_TAR
 ENV PATH=${SNPTEST_DIR}:${PATH}
 
-# Create an entrypoint for the binary
-RUN echo "#!/bin/bash" > /entrypoint.sh && \
-	echo "$RUN_CMD \$@" >> /entrypoint.sh && \
-	chmod +x /entrypoint.sh
+ARG ENTRY="/entrypoint.sh"
+RUN echo "#!/bin/bash" > ${ENTRY} && echo "$RUN_CMD \$@" >> ${ENTRY} && \
+	chmod +x ${ENTRY}
 ENTRYPOINT [ "/entrypoint.sh" ]
