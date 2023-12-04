@@ -20,5 +20,5 @@ ENV PATH=${SNPTEST_DIR}:${PATH}
 
 ARG ENTRY="/entrypoint.sh"
 RUN echo "#!/bin/bash" > ${ENTRY} && echo "$RUN_CMD \$@" >> ${ENTRY} && \
-	chmod +x ${ENTRY}
+	chmod ugo+rx ${ENTRY}
 ENTRYPOINT [ "/entrypoint.sh" ]
