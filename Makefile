@@ -10,7 +10,7 @@ TOOLS := snptest
 
 DOCKER_BUILD_ARGS ?=
 DOCKER_TAG ?= $(shell git describe --tags --broken --dirty --all --long | \
-		sed "s,heads/,," | sed "s,tags/,,")
+		sed "s,heads/,," | sed "s,tags/,,")_$(shell uname -m)
 DOCKER_BASE ?= $(patsubst docker-%,%,$(shell basename \
 		`git remote --verbose | grep origin | grep fetch | \
 		cut -f2 | cut -d ' ' -f1` | sed 's/.git//'))
