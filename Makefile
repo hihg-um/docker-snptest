@@ -62,7 +62,7 @@ $(TOOLS):
 		.
 
 	$(if $(shell git fetch 2>&1; git diff @{upstream} 2>&1),,docker \
-	       tag $(ORG_NAME)/$@:$(DOCKER_TAG) $(ORG_NAME)/$@:latest)
+		tag $(ORG_NAME)/$@:$(DOCKER_TAG) $(ORG_NAME)/$@:latest)
 
 docker_base:
 	@echo "Building Docker base: $(DOCKER_BASE):$(DOCKER_TAG)"
