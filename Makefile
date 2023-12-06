@@ -92,8 +92,10 @@ docker_test:
 			$(ORG_NAME)/$$f $(IMAGE_TEST_ARGS); \
 	done
 
-docker_release: $(DOCKER_IMAGES)
-	@for f in $^; do \
+docker_release:
+	@for f in $(DOCKER_IMAGES); do \
+		docker tag $(ORG_NAME)/$$f \
+			$(IMAGE_REPOSITORY)/$(ORG_NAME)/$$f; \
 		docker push $(IMAGE_REPOSITORY)/$(ORG_NAME)/$$f; \
 	done
 
