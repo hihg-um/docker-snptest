@@ -2,6 +2,8 @@
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
+LABEL org.opencontainers.image.description="SNPtest from https://www.well.ox.ac.uk/~gav/resources/"
+
 ARG RUN_CMD
 
 WORKDIR /runtime

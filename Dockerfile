@@ -2,6 +2,8 @@
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
+LABEL org.opencontainers.image.description="base image for SNPtest"
+
 # Install OS updates, security fixes and utils, generic app dependencies
 RUN apt -y update -qq && apt -y upgrade && \
 	DEBIAN_FRONTEND=noninteractive apt -y install \

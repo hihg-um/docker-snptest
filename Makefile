@@ -95,7 +95,7 @@ docker_test:
 	done
 
 docker_release:
-	@for f in $(DOCKER_IMAGES); do \
+	@for f in $(DOCKER_BASE):$(DOCKER_TAG) $(DOCKER_IMAGES); do \
 		docker tag $(ORG_NAME)/$$f \
 			$(IMAGE_REPOSITORY)/$(ORG_NAME)/$$f; \
 		docker push $(IMAGE_REPOSITORY)/$(ORG_NAME)/$$f; \
