@@ -17,7 +17,7 @@ DOCKER_BASE ?= $(patsubst docker-%,%,$(shell basename \
 		`git remote --verbose | grep origin | grep fetch | \
 		cut -f2 | cut -d ' ' -f1` | sed 's/.git//'))
 DOCKER_IMAGES := $(TOOLS:=\:$(DOCKER_TAG))
-SIF_IMAGES := $(TOOLS:=\:$(DOCKER_TAG).sif)
+SIF_IMAGES := $(TOOLS:=_$(DOCKER_TAG).sif)
 
 IMAGE_TEST_ARGS ?= "-help"
 
@@ -105,8 +105,10 @@ docker_release:
 apptainer: $(SIF_IMAGES)
 
 $(SIF_IMAGES):
-	@echo "Building Apptainer: $@"
-	@apptainer build $@ docker-daemon:$(ORG_NAME)/$(patsubst %.sif,%,$@)
+	@for f in $(DOCKER_IMAGES); do \
+		echo "Building Apptainer: $@"; \
+		apptainer pull docker-daemon:$(ORG_NAME)/$$f; \
+	done
 
 apptainer_clean:
 	@for f in $(SIF_IMAGES); do \
