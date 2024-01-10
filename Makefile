@@ -78,10 +78,11 @@ docker_clean:
 		docker rmi -f $(ORG_NAME)/$$f:$(DOCKER_TAG) 2>/dev/null; \
 		if [ -z "`git fetch 2>&1; \
 			git diff @{upstream} 2>&1`" ]; then \
-				docker rmi -f $(ORG_NAME)/$$f:latest; \
+				docker rmi -f $(ORG_NAME)/$$f:latest \
+					2>/dev/null; \
 		fi \
 	done
-	@docker rmi -f $(ORG_NAME)/$(DOCKER_BASE):$(DOCKER_TAG)
+	@docker rmi -f $(ORG_NAME)/$(DOCKER_BASE):$(DOCKER_TAG) 2>/dev/null
 	@docker builder prune -f 2>/dev/null;
 
 docker_test:
