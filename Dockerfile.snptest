@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0
-ARG BASE_IMAGE
-FROM $BASE_IMAGE
+ARG BASE
+FROM $BASE
 
-LABEL org.opencontainers.image.description="SNPtest from https://www.well.ox.ac.uk/~gav/resources/"
-
+# build-args
+ARG BASE
 ARG RUN_CMD
+ARG BUILD_REPO
 
 WORKDIR /runtime
 
@@ -20,7 +21,15 @@ RUN wget ${SNPTEST_URL}/${SNPTEST_TAR} && mkdir -p ${SNPTEST_DIR} && \
 		"${SNPTEST_DIR}/${RUN_CMD}" && rm $SNPTEST_TAR
 ENV PATH=${SNPTEST_DIR}:${PATH}
 
+ARG TEST="/test.sh"
+COPY --chmod=0555 src/test/$RUN_CMD.sh ${TEST}
+
 ARG ENTRY="/entrypoint.sh"
 RUN echo "#!/bin/bash" > ${ENTRY} && echo "$RUN_CMD \$@" >> ${ENTRY} && \
 	chmod ugo+rx ${ENTRY}
 ENTRYPOINT [ "/entrypoint.sh" ]
+
+LABEL org.opencontainers.image.base.name="${BASE}"
+LABEL org.opencontainers.image.description="SNPtest from https://www.well.ox.ac.uk/~gav/resources/"
+LABEL org.opencontainers.image.url="${BUILD_REPO}"
+
